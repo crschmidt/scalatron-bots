@@ -74,13 +74,44 @@ case class View(cells: String) {
                     val dist = Math.abs(i) + Math.abs(j)
                     val dirXY = XY(i,j).fix()
                     val cell = cellAtRelPos(List(dirXY.x, dirXY.y))
-                    if (dist < closest && (cell != "W") && cell != "p" && cell != "s" && cell != "m" && cell != "b") {
+                    if (dist < closest && safePath(XY(i, j))) {
                         closest = dist
                         seen = true
                         output = XY(i, j)
                     }    
                 }
             }
+        }
+        output
+    }
+    def safePath(xy: XY) : Boolean = {
+        var safe = true
+        val path = pathTo(xy)
+        for (i <- 0 until path.length) {
+            val cell = cellAtRelPos(List(path(i).x, path(i).y))
+            if (cell == "W" || cell == "p" || cell == "s" || cell == "m" || cell == "b") {
+                safe = false
+            }
+        }
+        safe
+    }
+    def pathTo(xy: XY) : List[XY] = {
+        val fixedXY = xy.fix()
+        var output = List[XY]()
+        for (i <- 1 until math.abs(math.max(math.abs(xy.x), math.abs(xy.y)))) {
+            var x = 0
+            var y = 0
+            if (math.abs(xy.x) >= i) {
+                x = i * fixedXY.x
+            } else {
+                x = xy.x
+            }    
+            if (math.abs(xy.y) >= i) {
+                y = i * fixedXY.y
+            } else {
+                y = xy.y
+            }
+            output ::= XY(x, y)
         }
         output
     }
