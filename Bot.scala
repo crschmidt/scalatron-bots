@@ -17,6 +17,7 @@ class Bot {
             val viewObj = View(view)
             var dir = viewObj.safeDirections()
             // we assemble a response command and yield it back to the server
+            var wander = false
             if (dir.x == 0 && dir.y == 0) {
                if (direction == 0) {
                  dir = XY(0, 1)
@@ -35,14 +36,72 @@ class Bot {
                } else if (direction == 7) {
                 dir = XY(-1, 1)
                }
+               //dir = longestSafe(viewObj)
+               wander = true
                //dir = safeMove(dir, viewObj)
             }
             dir = safeMove(XY(dir.x, dir.y), viewObj)
-            "Move(dx="+dir.x+",dy="+dir.y+")"
+            if (wander) {
+                "Move(dx="+dir.x+",dy="+dir.y+")|Status(text=Wander)"
+            } else{
+                "Move(dx="+dir.x+",dy="+dir.y+")"
+            }
     } else if ( opcode == "Goodbye") {
         println(params("energy"))
         ""
     }
+  }
+  def isCellSafe(xy: XY, view: View) : Boolean = {
+    val cell = view.cellAtRelPos(List(xy.x, xy.y))
+    return !(cell == "W" || cell == "p" || cell == "s" || cell == "m" || cell == "b")
+  }  
+  def longestSafe(view: View) = {
+    var northSafe = 0
+    var eastSafe  = 0
+    var southSafe = 0
+    var westSafe  = 0
+    for (i <- 1 until 15) {
+        val nCellSafe = isCellSafe(XY(0, -i), view)
+        if (nCellSafe && northSafe == (i-1)) {
+            northSafe = i
+        }
+        val sCellSafe = isCellSafe(XY(0, i), view)
+        if (sCellSafe && southSafe == (i-1)) {
+            southSafe = i
+        }
+        val eCellSafe = isCellSafe(XY(i,0), view)
+        if (eCellSafe && eastSafe == (i-1)) {
+            eastSafe = i
+        }
+        val wCellSafe = isCellSafe(XY(-i,0), view)
+        if (wCellSafe && westSafe == (i-1)) {
+            westSafe = i
+        }
+        
+    }
+    var ret = XY(0,0)
+    if (northSafe > eastSafe && northSafe > southSafe && northSafe > westSafe) {
+        ret = XY(0,-1)
+    }    
+    else if (eastSafe > northSafe && eastSafe > southSafe && eastSafe > westSafe) {
+        ret = XY(1,0)
+    }    
+    else if (southSafe > northSafe && southSafe > eastSafe && southSafe > westSafe) {
+        ret = XY(0,1)
+    }    
+    else if (westSafe > northSafe && westSafe > eastSafe && westSafe > southSafe) {
+        ret = XY(-1,0)
+    } else if (northSafe == 14) {
+        ret = XY(0, -1)
+    } else if (eastSafe == 14) {
+        ret = XY(1, 0)
+    } else if (southSafe == 14) {
+        ret = XY(0, 1)
+    } else if (westSafe == 14) {
+        ret = XY(-1, 0)
+    }    
+    println(northSafe+", "+ eastSafe+", "+ southSafe+", "+ westSafe + ": " + ret)
+    ret
   }
   def safeMove(d: XY, view: View) : XY = {
     var myXY = d.fix()
